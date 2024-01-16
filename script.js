@@ -1,16 +1,15 @@
-//your JS code here. If required.
 class MyPromise {
   constructor(executor) {
     this.state = 'pending';
     this.value = null;
-    this.onFulfilledCallbacks = [];
-    this.onRejectedCallbacks = [];
+    this.fulfilledCallbacks = [];
+    this.rejectedCallbacks = [];
 
     const resolve = (value) => {
       if (this.state === 'pending') {
         this.state = 'fulfilled';
         this.value = value;
-        this.executeCallbacks(this.onFulfilledCallbacks, this.value);
+        this.executeCallbacks(this.fulfilledCallbacks, value);
       }
     };
 
@@ -18,7 +17,7 @@ class MyPromise {
       if (this.state === 'pending') {
         this.state = 'rejected';
         this.value = reason;
-        this.executeCallbacks(this.onRejectedCallbacks, this.value);
+        this.executeCallbacks(this.rejectedCallbacks, reason);
       }
     };
 
@@ -26,26 +25,6 @@ class MyPromise {
       executor(resolve, reject);
     } catch (error) {
       reject(error);
-    }
-  }
-
-  executeCallbacks(callbacks, value) {
-    while (callbacks.length) {
-      const callback = callbacks.shift();
-
-      try {
-        const result = callback(value);
-        if (result instanceof MyPromise) {
-          result.then(
-            (resolvedValue) => resolve(result, resolvedValue),
-            (rejectedReason) => reject(result, rejectedReason)
-          );
-        } else {
-          resolve(result);
-        }
-      } catch (error) {
-        reject(error);
-      }
     }
   }
 
@@ -82,8 +61,8 @@ class MyPromise {
       } else if (this.state === 'rejected') {
         rejectedHandler(this.value);
       } else {
-        this.onFulfilledCallbacks.push(fulfilledHandler);
-        this.onRejectedCallbacks.push(rejectedHandler);
+        this.fulfilledCallbacks.push(fulfilledHandler);
+        this.rejectedCallbacks.push(rejectedHandler);
       }
     });
   }
@@ -91,34 +70,14 @@ class MyPromise {
   catch(onRejected) {
     return this.then(null, onRejected);
   }
+
+  executeCallbacks(callbacks, value) {
+    setTimeout(() => {
+      callbacks.forEach((callback) => {
+        callback(value);
+      });
+    }, 0);
+  }
 }
 
-const resolve = (result) => {
-  console.log(result);
-  return result + 10;
-};
-
-const reject = (reason) => {
-  console.log('error:', reason);
-  return reason + 10;
-};
-
-const promise = new MyPromise((res, rej) => {
-  res(10);
-});
-
-promise
-  .then(resolve)
-  .then(resolve)
-  .then(
-    (result) => {
-      console.log(result);
-      throw result + 10;
-    },
-    reject
-  )
-  .then(resolve)
-  .catch(reject)
-  .then(resolve);
-
-console.log('end');
+module.exports = MyPromise;
